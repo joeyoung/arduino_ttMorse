@@ -1,0 +1,101 @@
+ttMorse - text to morse code engine library for arduino
+
+ G. D. (Joe) Young <jyoung@islandnet.com>
+
+created: Feb 25, 2013 - design document
+
+revised:
+
+
+Features of prototype morse code generator morse2:
+ - code generator uses non-blocking timing based on millis( )
+ - code characters stored in single byte; ascii characters are mapped into
+   the array of code characters by an index = (ascii & 0x7f) - 0x20. This
+   results in about double the code character storage since there are no
+   upper and lower case morse.
+ - the generator is started by setting an array pointer to the start of a
+   string, a limit to the length of the string, a string index to 0, call
+   to setGetBit( ) to retrieve the first translated code character, and 
+   setting flag 'sending'.
+ - the morse2 prototype sends something every 30 seconds. It also fetches
+   a string from the console, and has a test to see if a console string is
+   ready and if so it sends the console string. If not ready, it sends a
+   test string.
+
+Library version interface:
+ - constructor to specify: pins for output (tone, level)
+						   tone freq
+						   code speed
+						   string to send (possibly only a default)
+ - access functions:
+	- msend( ) - starts the setup string being sent
+	  msend( char *str ) - specify and send string
+	- mbusy( ) - returns true when string is being sent
+	- msetStr( char *str ) - specify string to send (necessary?)
+	- mspeed( byte speed ) - change sending speed
+
+Examples:
+
+**simplest - send string continuously
+ char *tstStr = "this is a test";
+
+ // led (or level) output pin 13, tone out pin 12, 800Hz tone freq, 15 wpm
+ ttMorse ttm( 13, 12, 800, 15, tstStr );
+
+ setup( ) {
+ }
+
+ loop( ) {
+	ttm.msend( );  // sending happens  
+} 
+
+
+**console input sender:
+
+ char inputline[MAX_CHARS]; //buffer for console input
+
+  - gather input characters - say up to <NL>
+  - terminate inputline with <null> (if necessary to make valid string)
+
+  - if( !ttm.mbusy( ) ) ttm.msend( inputline );
+
+
+==========================================================================
+
+March 1/13 -- Implementation details
+
+* The console line sender turns out to be rather more complex than the
+  outline just above suggests (see example sketch ttcode.ino):
+  - to be non-blocking in loop, can't use Serial's readBytesUntil function
+  - to send text just once requires careful setting of a flag (mstart) 
+    based on the status returned from msend; the flag controls whether 
+    msend is called at the loop rate. This structure does the trick:
+
+    if( mstart ) {
+      if( ttm.msend( ) == false ) mstart = false;
+    }
+
+  - Then, if another line comes in from the console before the one being
+    sent in Morse is finished, it overwrites the being-sent characters,
+    causing the sending routine to lose it's mind. Example sketch
+    ttcode2.ino begins to address this 'problem' by implementing ping-
+    pong buffering so that one line can be sending while a second one is
+    getting input characters. This still doesn't accomplish full type-ahead
+    capability since the same overwrite problem can occur if more than one
+    line ahead of sending is entered.
+
+* Handling of spaces turned out to be somewhat awkward. The implementation
+  at this date has about three parts:
+  - leading spaces are handled in setup on first call to msend
+  - middle and trailing spaces are handled in msend( ) following a 
+    sendable character
+  - a line of only spaces is also handled in setup on first call to msend,
+    but by 'simulating' a sending character with the output off, bypassing
+    the msend altogether.
+  It all works cleanly, but perhaps a different strategy that involved
+  sending the spaces one at a time from within msend might be neater.
+
+ 
+
+
+
