@@ -11,4 +11,12 @@ second (previously input) line is sent in Morse.
 This timing method also permits two or more ttMorse objects to run
 simultaneously.
 
+March 20, 2013
+
+ttMorsePWM arduino library extends ttMorse to provide dds sine wave
+generator with pwm analog output using timer2 fast pwm mode.
+
+ttMorse now handles prosign generation, output logic polarity control,
+and now has several virtual functions to permit ttMorsePWM extension
+of tone generation and timing.
 

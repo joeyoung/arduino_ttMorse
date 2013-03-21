@@ -4,6 +4,8 @@
 // started: Feb 25/13 - G. D. Young
 
 // revised: Mar  1/13 - sendingsp boolean for complete spacing handling.
+//          Mar 11/13 - over-rideable timer functions
+//          Mar 19/13 - tidyups, revisions(see .cpp)
 //          
 
 #ifndef TTMORSE_H
@@ -18,7 +20,7 @@ class ttMorse {
 public:
 
 	// constructor
-	ttMorse( byte ledpin, byte tonepin, unsigned int tfreq, byte cspwpm, char *str );
+	ttMorse( char ledpin, byte tonepin, unsigned int tfreq, byte cspwpm, char *str );
 
 	// access functions
 	bool msend( );				// start sending constructed string
@@ -27,20 +29,30 @@ public:
 	void msetStr( char *str );  // specify string to send
 	void mspeed( byte speed );	// change sending speed
 
+	virtual void toneOn( ); 	// to allow for pwm tone
+	virtual void toneOff( );
+
+	virtual inline bool onTimer( );	// to allow timers from pwm gen
+	virtual inline bool offTimer( );
+	virtual unsigned long initTimers( );
+	unsigned long elementStart, elementEnd;  // for timers
+
+protected:
+	bool toneon;
 
 private:
 	byte mlpin, mtpin, cspwpm;
 	unsigned int mtfreq;
 	char *mstr;
 
-	unsigned long elementStart, elementEnd;  // for timers
 	unsigned long dotDur;
-	bool sending = false;
-	bool eltOn = false;
-	bool endCode = true;
+	bool sending;
+	bool eltOn;			//arduino-1.0.3 doesn't allow initializing
+	bool endCode;
 	bool lastelt;
-	bool toneon;
 	bool sendingsp;
+	bool opinvert;
+	bool prosign;
 
 	char cidx, mtidx, lcount;
 	char tabsiz;
