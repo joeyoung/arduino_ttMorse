@@ -4,19 +4,20 @@
 
 // revised: Mar 19/13 - flags to control one time, o/p pwm on 11
 //                      prosign in second string.
+//          Apr 12/13 - use with ttMorse_PWMt, table-lookup rise/fall
 
 // starts with constructor's string, when it's finished, switches
 // to a second string which is then sent continuously thereafter.
 // Shows handling of leading spaces in string.
 
 #include <ttMorse.h>
-#include <ttMorse_PWM.h>
+#include <ttMorse_PWMt.h>
 
 
 char *teststr = "this is a test =";
 char *another = "    and another. *ar*";
 
-ttMorse_PWM ttm( 13, 11, 900, 10, teststr, 5 );
+ttMorse_PWMt ttm( 13, 11, 900, 10, teststr, 5 );
 
 boolean first;
 char msgcount;

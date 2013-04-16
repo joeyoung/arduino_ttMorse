@@ -1,4 +1,4 @@
-// testing ttMorse_PWM library
+// testing ttMorse_PWMt library
 
 // works fine with risetime control ISR, but full ttMorse examples
 // do not--the ISR with risetime control takes too long, so morse
@@ -9,13 +9,15 @@
 
 // Mar 20/13 clean out most test hacks, leave rest for example
 
+// Apr 12/13 use with ttMorse_PWMt, table-lookup rise/fall
+
 #include <ttMorse.h>
-#include <ttMorse_PWM.h>
+#include <ttMorse_PWMt.h>
 
 char str[ ] = " foo";
 byte rt = 5;           // set for "clickless" keying
 
-ttMorse_PWM ttm( 13, 11, 850, 20, str, rt );
+ttMorse_PWMt ttm( 13, 11, 850, 20, str, rt );
 
 boolean dash = false;
 boolean ton = true;

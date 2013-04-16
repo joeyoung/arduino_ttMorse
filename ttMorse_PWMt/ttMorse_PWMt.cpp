@@ -1,4 +1,4 @@
-// ttMorse_PWM.cpp - dds, pwm tone generator for ttMorse library
+// ttMorse_PWMt.cpp - dds, pwm tone generator for ttMorse library
 // created from: toneGen2 - DDS tone with pwm output
 // created: Mar 6/13 G. D. Young
 //          Mar 7/13 - start/stop, risetime control
@@ -7,44 +7,28 @@
 //          Mar 11/13 - using signed table format - simplify ramp * sample
 //			Mar 13/13 - using pwm interrupt for timing
 //          Apr 11/13 - stop timer interrupts around toneOn, toneOff flag set
-//          Apr 16/13 - cleanups
+//          Apr 11/13 - ttMorse_PWMt - lookup table for rise/fall control
+//          Apr 16/13 - cleanups.
 
 #include <stdlib.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include "sinTab.h"
+#include "luTab.h"
 
-#include "ttMorse_PWM.h"
+#include "ttMorse_PWMt.h"
+
 
 
 ISR( TIMER2_OVF_vect ) {
 	cli( );
-	ttMorse_PWM::timer_int( );
+	ttMorse_PWMt::timer_int( );
 	sei( );
 } // interrupt access to class handler
 
-#if 0
-// this synth without rise/fall control works OK
-void ttMorse_PWM::timer_int( ) {
-  pwmkhz--;							// byte prescale/reload is faster than long increment
-  if( pwmkhz == 0 ) {
-	pwmtick++;						// for pwm timer timing
-	pwmkhz = 62;
-  }
-  accumulator += increment;
-  highbyte = accumulator >> 24;
-    if( armtoff ) {
-      OCR2A = 128;
-//      TIMSK2 = 0;
-      amplacc = 0;
-    } else {    
-      OCR2A = sinTab[highbyte] + 128;  // using signed storage table
-    } // if tone off armed
-} // timer2 count overflow interrupt service
-#endif
 
 // timer2 overflow interrupt - dds, pwm generator, ramp on and off
-void ttMorse_PWM::timer_int( ) {
+void ttMorse_PWMt::timer_int( ) {
   pwmkhz--;
   if( pwmkhz == 0 ) {
 	pwmtick++;						// for pwm timer timing
@@ -58,8 +42,8 @@ void ttMorse_PWM::timer_int( ) {
 
     if( !armtoff && (amplacc < 0xff00) ) {
       amplacc += amplinc;
-      sample = amplacc >> 8;
-      sample = sample * ((int)sinTab[highbyte]);
+      luidx = (byte)((amplacc >> 8)&0xff);
+      sample = ((int)luTab[luidx]) * ((int)sinTab[highbyte]);
       if( pwmoutput == 3 ) OCR2B = (unsigned char)((sample >> 8) + 128);
       if( pwmoutput == 11 ) OCR2A = (unsigned char)((sample >> 8) + 128);
     } else {
@@ -69,8 +53,8 @@ void ttMorse_PWM::timer_int( ) {
 
     if( armtoff && (amplacc < 0xff00) ) {
       amplacc += amplinc;
-      sample = amplacc >> 8;
-      sample = ((int)(254-sample)) * ((int)sinTab[highbyte]);
+      luidx = (byte)((amplacc >> 8)&0xff);
+      sample = ((int)(255-luTab[luidx])) * ((int)sinTab[highbyte]);
       if( pwmoutput == 3 ) OCR2B = (unsigned char)((sample >> 8) + 128);
       if( pwmoutput == 11 ) OCR2A = (unsigned char)((sample >> 8) + 128);
 	} else if( armtoff && amplacc >= 0xff00 ) {
@@ -84,21 +68,21 @@ void ttMorse_PWM::timer_int( ) {
 } // timer2 count overflow interrupt service
 
 // using pwm generator for timing
-bool ttMorse_PWM::onTimer( ) {
+bool ttMorse_PWMt::onTimer( ) {
     TIMSK2 = 0; 		// no interruptions
 	bool lt = ( elementStart < pwmtick );
 	TIMSK2 = 1;
 	return lt; 
 } // onTimer( )
 
-bool ttMorse_PWM::offTimer( ) {
+bool ttMorse_PWMt::offTimer( ) {
     TIMSK2 = 0; 		// no interruptions
 	bool lt = ( elementEnd < pwmtick );
 	TIMSK2 = 1;
 	return lt; 
 } // offTimer( )
 
-unsigned long ttMorse_PWM::initTimers( ) {
+unsigned long ttMorse_PWMt::initTimers( ) {
 	TIMSK2 = 0;
 	unsigned long tk = pwmtick;
 	TIMSK2 = 1;
@@ -106,7 +90,7 @@ unsigned long ttMorse_PWM::initTimers( ) {
 } // initTimers( )
 
 // setup the timer2 for fast pwm and overflow interrupt
-void ttMorse_PWM::setTimInt( ) {
+void ttMorse_PWMt::setTimInt( ) {
 	TCCR2B = 1;
 	if( pwmpin == 11 ) {
 		TCCR2A = (1<<COM2A0) | (1<<COM2A1) | (1<<WGM20) | (1<<WGM21);
@@ -123,22 +107,20 @@ void ttMorse_PWM::setTimInt( ) {
   pwmtick = 0;
 } // setTimInt
 
-void ttMorse_PWM::setFreq( unsigned int ptfreq ) {
+void ttMorse_PWMt::setFreq( unsigned int ptfreq ) {
   increment = 68719L * ptfreq;
   accumulator = 0L;
   if( pwmoutput == 3 ) OCR2B = 128;
   if( pwmoutput == 11 ) OCR2A = 128;
 } // setFreq
 
-void ttMorse_PWM::setRise( byte rt ) {
-  rtmsec = rt;
-  if( rt == 0 ) rtmsec = 1;
-  if( rt > 50 ) rtmsec = 50;
+void ttMorse_PWMt::setRise( byte rtmsec ) {
+  if( rtmsec == 0 ) rtmsec = 1;
+  if( rtmsec > 50 ) rtmsec = 50;
   amplinc = 1048/rtmsec;
-// 2**20/(risetime[usec]) for 62500 s/sec pwm
-} // setAmpl
+} // setRise
 
-void ttMorse_PWM::toneOn( ) {
+void ttMorse_PWMt::toneOn( ) {
   TIMSK2 = 0;		//no interruptions when setting flags
   amplacc = 0;
   armtoff = false;
@@ -146,7 +128,7 @@ void ttMorse_PWM::toneOn( ) {
   TIMSK2 = (1<<TOIE2);
 } // toneOn
 
-void ttMorse_PWM::toneOff( ) {
+void ttMorse_PWMt::toneOff( ) {
   TIMSK2 = 0;		//no interruptions when setting flags
   armtoff = true;
   amplacc = 0;

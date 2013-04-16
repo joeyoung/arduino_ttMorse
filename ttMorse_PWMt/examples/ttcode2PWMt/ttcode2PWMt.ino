@@ -1,10 +1,11 @@
-// ttcode2PWM text from serial to morse code output, double-buffered
+// ttcode2PWMt text from serial to morse code output, double-buffered
 //
 // created: Feb 28/13  G. D. Young <jyoung@islandnet.com>
 //
 // revised: Mar  9/13 - PWM version
 //          Mar 18/13 - now working, background pwm calc - fixed
 //                      ttMorse test for elementEnd
+//          Apr 12/13 - use with table lookup rise/fall
 //
 // Illustrates getting line from Serial in a non-blocking way so
 // that ttMorse can function while still monitoring for serial i/p.
@@ -17,10 +18,10 @@
 
 
 #include <ttMorse.h>
-#include <ttMorse_PWM.h>   //added for PWM
+#include <ttMorse_PWMt.h>   //added for PWM
 
 // PWM specs risetime in 6th place
-ttMorse_PWM ttm( 13, 11, 800, 25, "xx", 5 );
+ttMorse_PWMt ttm( 13, 11, 800, 25, "xx", 5 );
 //ttMorse_PWM ttm( 13, 12, 800, 25, "xx" );
 
 const char termchr = '\n';

@@ -1,0 +1,49 @@
+ttMorsePWMt.txt - use table-lookup for rise/fall shape of PWM waveform
+
+created: April 12, 2013  G. D. (Joe) Young <jyoung@islandnet.com>
+
+For information about the ttMorse, ttMorse_PWM libraries, see the files
+ttmDesign.txt and ttMorsePWM.txt
+
+Instead of the linear ramp rise/fall of ttMorsePWM, this version assumes
+the shape of the rise/fall will be stored in a table which has the following
+characteristics:
+ - 256 bytes long
+ - Range of entries is 0..255; 0 corresponds to zero output from PWM
+   generator, 255 corresponds to max output from PWM generator (+/- 127)
+ - The beginning entries of the table correspond to the start of the rise
+   (so should be zero or close to it) and the end of the table corresponds
+   to the end of the rise time. When the program generates the fall time,
+   the table is read in the SAME order, but the value used for the gain is
+   255-tablevalue. This behaviour is necessary for the case of rise/fall
+   waveforms that are not symmetrical about the mid-amplitude point--such as
+   the exponential shape.
+ - The 'rise time' is defined to be the time it takes the (16-bit) amplitude 
+   accumulation to reach all the way through the table. This (arbitrary)
+   definition is to make the rise time definition similar to the linear
+   ramp rise/fall definition in ttMorse_PWM.
+ - The risetime table is stored in a file named luTab.h located in the
+   library folder ttMorse_PWMt (along with the .cpp and other .h files).
+   See the file luTab.h for the details of the necessary format for this
+   header file to be included correctly by the arduino compilation.
+
+Some look-up tables are included with this documentation: exp2Tab.h, 
+linTab.h, cosTab.h and cubTab.h. To use these tables (or any other created
+to conform as described above), move the table (or a copy) out of the docs
+folder to be with the library files (.cpp, .h, keywords), then rename the
+rise/fall table file to luTab.h and rebuild your sketch with the 
+ttMorse_PWMt library. You probably have to exit the arduino environment and
+restart it for the changes in the library files structure to be noticed.
+
+The exponential table has been constructed with values corresponding to 4
+time constants (plus a little fiddling at the end). Consequently if you want
+the Morse elements to have a particular tau (time constant), then you need
+to specify 4 times that value in the object constructor. For example, to
+have the waveform rise to 63% of its max value within 5 msec, you specify
+the risetime in the constructor to be 20.
+
+The cubTab.h table is based on the function y = 3*x*x - 2*x*x*x on the 
+interval 0..1. This function has zero slope at x=0 and at x=1 and amplitude
+1 at x=1. Thanks Ben.
+
+
