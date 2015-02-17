@@ -1,0 +1,20 @@
+keyExamples.txt - illustrate using subset of library functions
+
+created: Feb 17, 2015  G. D. (Joe) Young <jyoung@islandnet.com>
+
+The example key.ino implements a very basic iambic Morse code key. The
+program uses only the toneOn( ), toneOff( ), and the element mark and space
+timers. The text-to-Morse function and its support code is not called, and
+consequently the memory footprint is quite a bit smaller.
+
+To illustrate the difference, the example key_msend has a minimal addition
+of sending an 8-character start up string. If this example is compiled
+(arduino-1.0.5) the reported size is 6908 bytes. When only the two lines
+of the msend( ) and completion test are commented out, the reported size
+is 5692 bytes. This difference indicates that the text-to-Morse function
+(and any of its private support) takes about 1200 bytes.
+
+The example key_testinputs provides a simple test to verify that the key
+paddle inputs, debounce library, and tone output are functioning.
+
+
